@@ -7,9 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-
-// This is the code for your desktop app.
-// Press Ctrl+F5 (or go to Debug > Start Without Debugging) to run your app.
+using MySql.Data.MySqlClient;
 
 namespace AlarmSuiteSimulator
 {
@@ -20,16 +18,65 @@ namespace AlarmSuiteSimulator
             InitializeComponent();
         }
 
-        private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        private void Form1_Load(object sender, EventArgs e)
         {
-            // Click on the link below to continue learning how to build a desktop app using WinForms!
-            System.Diagnostics.Process.Start("http://aka.ms/dotnet-get-started-desktop");
+            stopBtn.Enabled = false;
+            servRateLbl.Text = "Service Rate: " + servBar.Value + " seconds";
+            trigRateLbl.Text = "Trigger Rate: " + trigBar.Value + " seconds";
+            alertRateLbl.Text = "Alert Rate: " + alertBar.Value + " seconds";
+            timeIntLbl.Text = "Time Interval: " + timeBar.Value + " seconds";
+        }
+
+        private void startBtn_Click(object sender, EventArgs e)
+        {         
+            startBtn.Enabled = false;
+            stopBtn.Enabled = true;
+            resetBtn.Enabled = false;
+            timer1.Interval = timeBar.Value * 1000;
+            timer1.Start();
+
+        }
+        
+        private void stopBtn_Click(object sender, EventArgs e)
+        {
+            timer1.Stop();
+            startBtn.Enabled = true;
+            stopBtn.Enabled = false;
+            resetBtn.Enabled = true;
+        }
+
+        private void resetBtn_Click(object sender, EventArgs e)
+        {
+            //Reset alarms to "ok" status
+        }
+
+        private void timer1_Tick(object sender, EventArgs e)
+        {
+            int servRate = servBar.Value;
+            int trigRate = trigBar.Value;
+            int alertRate = alertBar.Value;
+
 
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        private void servBar_Scroll(object sender, EventArgs e)
         {
-            MessageBox.Show("Thanks!");
+            servRateLbl.Text = "Service Rate: " + servBar.Value + " seconds";
+        }
+
+        private void trigBar_Scroll(object sender, EventArgs e)
+        {
+            trigRateLbl.Text = "Trigger Rate: " + trigBar.Value + " seconds";
+        }
+
+        private void alertBar_Scroll(object sender, EventArgs e)
+        {
+            alertRateLbl.Text = "Alert Rate: " + alertBar.Value + " seconds";
+        }
+
+        private void timeBar_Scroll(object sender, EventArgs e)
+        {
+            timeIntLbl.Text = "Time Interval: " + timeBar.Value + " seconds";
         }
     }
 }
