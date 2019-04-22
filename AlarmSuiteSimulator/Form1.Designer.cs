@@ -73,7 +73,7 @@ namespace AlarmSuiteSimulator
             // servBar
             // 
             this.servBar.Location = new System.Drawing.Point(54, 77);
-            this.servBar.Minimum = 3;
+            this.servBar.Minimum = 1;
             this.servBar.Name = "servBar";
             this.servBar.Size = new System.Drawing.Size(104, 45);
             this.servBar.TabIndex = 4;
@@ -105,7 +105,7 @@ namespace AlarmSuiteSimulator
             // trigBar
             // 
             this.trigBar.Location = new System.Drawing.Point(200, 77);
-            this.trigBar.Minimum = 3;
+            this.trigBar.Minimum = 1;
             this.trigBar.Name = "trigBar";
             this.trigBar.Size = new System.Drawing.Size(104, 45);
             this.trigBar.TabIndex = 7;
@@ -115,7 +115,7 @@ namespace AlarmSuiteSimulator
             // alertBar
             // 
             this.alertBar.Location = new System.Drawing.Point(357, 77);
-            this.alertBar.Minimum = 3;
+            this.alertBar.Minimum = 1;
             this.alertBar.Name = "alertBar";
             this.alertBar.Size = new System.Drawing.Size(104, 45);
             this.alertBar.TabIndex = 8;
