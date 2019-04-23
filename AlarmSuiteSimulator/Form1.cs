@@ -19,24 +19,21 @@ namespace AlarmSuiteSimulator
         }
 
         static string cstring = "server=alarmsuite.comd7ceadbpe.us-west-2.rds.amazonaws.com;database=AlarmSuite;uid=alarmSystemAdmin;pwd=alarmSystem2019;";
-        static int floors = 0;
         static Dictionary<int, List<int>> alarms = new Dictionary<int, List<int>>();
-        static Dictionary<int, string> users = new Dictionary<int, string>();
+        static Dictionary<int, int> floors = new Dictionary<int, int>();
+        static Dictionary<int, string> zones = new Dictionary<int, string>();
 
         private void Form1_Load(object sender, EventArgs e)
         {
             stopBtn.Enabled = false;
-            servRateLbl.Text = "Service Rate: " + servBar.Value + " seconds";
-            trigRateLbl.Text = "Trigger Rate: " + trigBar.Value + " seconds";
-            alertRateLbl.Text = "Alert Rate: " + alertBar.Value + " seconds";
             timeIntLbl.Text = "Time Interval: " + timeBar.Value + " seconds";
 
             try
             {
                 using (MySqlConnection conn = new MySqlConnection(cstring))
                 {
-                    //Gets amount of floors
-                    var proc = "USP_Select_Floors";
+                    //floors only
+                    var proc = "USP_Get_Select_FloorZones_Sim";
                     MySqlCommand cmd = new MySqlCommand(proc, conn);
                     cmd.CommandType = CommandType.StoredProcedure;
                     using (MySqlDataAdapter da = new MySqlDataAdapter(cmd))
@@ -46,25 +43,26 @@ namespace AlarmSuiteSimulator
 
                         foreach(DataRow row in dt.Rows)
                         {
-                            floors++;
+                            floors.Add(Convert.ToInt32(row["floor"]), Convert.ToInt32(row["zones"]));
                         }
                     }
-                    
-                    //Get users
-                    proc = "USP_Select_Users_Sim";
+
+                    //gets zones
+                    proc = "USP_Select_Zones";
                     cmd = new MySqlCommand(proc, conn);
                     using (MySqlDataAdapter da = new MySqlDataAdapter(cmd))
                     {
                         DataTable dt = new DataTable();
                         da.Fill(dt);
+
                         foreach (DataRow row in dt.Rows)
                         {
-                            users.Add(Convert.ToInt32(row["userID"]), row["userName"].ToString());
+                            zones.Add(Convert.ToInt32(row["zoneID"]), row["zoneName"].ToString());
                         }
                     }
-                    
+
                 }
-            }
+            }           
             catch (MySqlException ex)
             {
                 MessageBox.Show("Something went wrong: " + ex);
@@ -109,17 +107,14 @@ namespace AlarmSuiteSimulator
             {
                 MessageBox.Show("Something went wrong: " + ex);
             }
+            resetBtn.Enabled = false;
         }
 
-        //Every tick alarm statuses will be randomized
+        //Every tick alarm statuses will be randomized for a random type, floor, zone
         private void timer1_Tick(object sender, EventArgs e)
         {
-            //int servRate = servBar.Value;
-            //int trigRate = trigBar.Value;
-            //int alertRate = alertBar.Value;
-
             Random rand = new Random();
-            //int floor = rand.Next(1, floors);
+
 
             try
             {
@@ -136,79 +131,55 @@ namespace AlarmSuiteSimulator
                         da.Fill(dt);
                         foreach (DataRow row in dt.Rows)
                         {
-                            List<int> ids = new List<int>() { Convert.ToInt32(row["alarmTypeID"]), Convert.ToInt32(row["alarmStatusID"]), Convert.ToInt32(row["floorID"]) };
+                            List<int> ids = new List<int>() { Convert.ToInt32(row["alarmTypeID"]), Convert.ToInt32(row["alarmStatusID"]), Convert.ToInt32(row["floorID"]), Convert.ToInt32(row["zoneID"]), Convert.ToInt32(row["roomID"]) };
                             alarms.Add(Convert.ToInt32(row["alarmID"]), ids);
                         }
                     }
-                }
-             
-                foreach (KeyValuePair<int, List<int>> kvp in alarms)
-                {
-                    int alarmType = rand.Next(1, 6);
-                    int status = rand.Next(1, 4);
 
-                    if (kvp.Value[0] == alarmType)
+                    int floor = rand.Next(1, floors.Keys.Last() + 1);
+                    int zone = rand.Next(1, floors[floor] + 1);
+                    int alarmType = rand.Next(1, 4);
+                    int triggered = rand.Next(0, 6);
+                    int i = 0;
+                    foreach (KeyValuePair<int, List<int>> kvp in alarms)
                     {
-                        if (kvp.Value[2] == status)
+                        if (kvp.Value[0] == alarmType && kvp.Value[1] != 2 && kvp.Value[2] == floor && kvp.Value[3] == zone && i < triggered)
                         {
-                            //Alarm status is the same, so move on
-                            continue;
-                        }
-                        else
-                        {
-                            //OK
-                            if (status == 1)
-                            {
+                            conn.Open();
+                            proc = "USP_Update_Status_Sim";
+                            cmd = new MySqlCommand(proc, conn);
+                            cmd.Parameters.AddWithValue("alarm", kvp.Key);
+                            cmd.Parameters.AddWithValue("aStatus", 3);
+                            cmd.ExecuteNonQuery();
+                            conn.Dispose();
+                            conn.Close();
 
-                                //Service -> OK
-                                if (kvp.Value[2] == 2)
-                                {
-                                    //Service performed
-                                }
-                                //Triggered -> OK
-                                else if (kvp.Value[2] == 3)
-                                {
-                                    //User resolved alarm
-                                }
-                                //Alert -> OK
-                                else if (kvp.Value[2] == 4)
-                                {
-                                    //Alert resolved
-                                }
-                            }
-                            //Service
-                            else if (status == 2)
+                            var message = "";
+                            if(alarmType == 1)
                             {
-                                //OK -> Service
-                                if (kvp.Value[2] == 1)
-                                {
-                                    //General maintenance
-                                }
-                                //Alert -> Service
-                                else if(kvp.Value[2] == 4)
-                                {
-                                    //Alarm to be serviced
-                                }
+                                message = "Security Alarm <span class='triggered'>TRIGGERED</span> at F" + kvp.Value[2] + "-" + zones[kvp.Value[3]] + "-" + kvp.Value[4];
                             }
-                            //Triggered
-                            else if (status == 3)
+                            else if(alarmType == 2)
                             {
-                                //OK -> Triggered
-                                if(kvp.Value[2] == 1)
-                                {
-                                    //Alarm triggered
-                                }
+                                message = "Carbon Monoxide Alarm <span class='triggered'>TRIGGERED</span> at F" + kvp.Value[2] + "-" + zones[kvp.Value[3]] + "-" + kvp.Value[4];
                             }
-                            //Alert
-                            else
+                            else if(alarmType == 3)
                             {
-                                //Triggerd -> Alert
-                                if(kvp.Value[2] == 3)
-                                {
-                                    //User confirmed alert
-                                }
+                                message = "Fire Alarm <span class='triggered'>TRIGGERED</span> at F" + kvp.Value[2] + "-" + zones[kvp.Value[3]] + "-" + kvp.Value[4];
                             }
-                        }                                             
+
+                            conn.Open();
+                            proc = "USP_Insert_Message_Sim";
+                            cmd = new MySqlCommand(proc, conn);
+                            cmd.Parameters.AddWithValue("alarm", kvp.Key);
+                            cmd.Parameters.AddWithValue("msgDate", DateTime.Now);
+                            cmd.Parameters.AddWithValue("msg", message);
+                            cmd.ExecuteNonQuery();
+                            conn.Dispose();
+                            conn.Close();
+
+                            i++;
+                        }
                     }
                 }
             }
@@ -216,21 +187,6 @@ namespace AlarmSuiteSimulator
             {
                 MessageBox.Show("Something went wrong: " + ex);
             }
-        }
-
-        private void servBar_Scroll(object sender, EventArgs e)
-        {
-            servRateLbl.Text = "Service Rate: " + servBar.Value + " seconds";
-        }
-
-        private void trigBar_Scroll(object sender, EventArgs e)
-        {
-            trigRateLbl.Text = "Trigger Rate: " + trigBar.Value + " seconds";
-        }
-
-        private void alertBar_Scroll(object sender, EventArgs e)
-        {
-            alertRateLbl.Text = "Alert Rate: " + alertBar.Value + " seconds";
         }
 
         private void timeBar_Scroll(object sender, EventArgs e)
