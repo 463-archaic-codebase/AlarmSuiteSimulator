@@ -36,6 +36,8 @@ namespace AlarmSuiteSimulator
             this.timeBar = new System.Windows.Forms.TrackBar();
             this.timeIntLbl = new System.Windows.Forms.Label();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
+            this.elapsedLbl = new System.Windows.Forms.Label();
+            this.timer2 = new System.Windows.Forms.Timer(this.components);
             ((System.ComponentModel.ISupportInitialize)(this.timeBar)).BeginInit();
             this.SuspendLayout();
             // 
@@ -106,11 +108,25 @@ namespace AlarmSuiteSimulator
             // 
             this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
             // 
+            // elapsedLbl
+            // 
+            this.elapsedLbl.AutoSize = true;
+            this.elapsedLbl.Location = new System.Drawing.Point(211, 136);
+            this.elapsedLbl.Name = "elapsedLbl";
+            this.elapsedLbl.Size = new System.Drawing.Size(126, 13);
+            this.elapsedLbl.TabIndex = 14;
+            this.elapsedLbl.Text = "Time Elapsed: 0 seconds";
+            // 
+            // timer2
+            // 
+            this.timer2.Tick += new System.EventHandler(this.timer2_Tick);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(533, 292);
+            this.Controls.Add(this.elapsedLbl);
             this.Controls.Add(this.timeIntLbl);
             this.Controls.Add(this.timeBar);
             this.Controls.Add(this.resetBtn);
@@ -135,6 +151,8 @@ namespace AlarmSuiteSimulator
         private System.Windows.Forms.TrackBar timeBar;
         private System.Windows.Forms.Label timeIntLbl;
         private System.Windows.Forms.Timer timer1;
+        private System.Windows.Forms.Label elapsedLbl;
+        private System.Windows.Forms.Timer timer2;
     }
 }
 
