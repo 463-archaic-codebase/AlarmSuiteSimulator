@@ -30,6 +30,7 @@ namespace AlarmSuiteSimulator
         {
             stopBtn.Enabled = false;
             timeIntLbl.Text = "Time Interval: " + timeBar.Value + " seconds";
+            maxLbl.Text = "Max Alarms: " + maxBar.Value;
             timer2.Interval = 1000;
             try
             {
@@ -98,22 +99,23 @@ namespace AlarmSuiteSimulator
         //Resets alarms to "OK" status
         private void resetBtn_Click(object sender, EventArgs e)
         {
-            MySqlConnection cn = new MySqlConnection(cstring);
+            MySqlConnection conn = new MySqlConnection(cstring);
             try
             {
-                cn.Open();
+                conn.Open();
                 var proc = "USP_Reset_Alarms";
-                MySqlCommand cmd = new MySqlCommand(proc, cn);
+                MySqlCommand cmd = new MySqlCommand(proc, conn);
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.ExecuteNonQuery();
-                cn.Dispose();
-                cn.Close();
+                conn.Dispose();
+                conn.Close();
+                MessageBox.Show("Alarms successfully rest");
+                resetBtn.Enabled = false;
             }
             catch (MySqlException ex)
             {
                 MessageBox.Show("Something went wrong: " + ex);
-            }
-            resetBtn.Enabled = false;
+            }                   
         }
 
         //Every tick alarm statuses will be randomized for a random type, floor, zone
@@ -144,14 +146,17 @@ namespace AlarmSuiteSimulator
                         }
                     }
 
+                    //Randomizes order of dictionary
+                    alarms = alarms.OrderBy(x => rand.Next()).ToDictionary(item => item.Key, item => item.Value);
+
                     //Gets a random floor
                     int floor = rand.Next(1, floors.Keys.Last() + 1);
                     //Gets a random zone on the random floor
                     int zone = rand.Next(1, floors[floor] + 1);
                     //Gets a random alarm type
                     int alarmType = rand.Next(1, 4);
-                    //Sets the amount of alarms to trigger every tick
-                    int triggered = rand.Next(0, 3);
+                    //Sets the amount of alarms to change every tick
+                    int triggered = rand.Next(0, maxBar.Value + 1);
                     int i = 0;
 
                     //Alarm status to be set
@@ -160,6 +165,9 @@ namespace AlarmSuiteSimulator
                         status = 2;
                     foreach (KeyValuePair<int, List<int>> kvp in alarms)
                     {
+                        if (i == 0)
+                            break;
+
                         if (kvp.Value[0] == alarmType && kvp.Value[1] == 1 && kvp.Value[2] == floor && kvp.Value[3] == zone && i < triggered)
                         {
                             //Updates alarm status(es)
@@ -237,5 +245,9 @@ namespace AlarmSuiteSimulator
             timeIntLbl.Text = "Time Interval: " + timeBar.Value + " seconds";
         }
 
+        private void maxBar_Scroll(object sender, EventArgs e)
+        {
+            maxLbl.Text = "Max Alarms: " + maxBar.Value;
+        }
     }
 }
