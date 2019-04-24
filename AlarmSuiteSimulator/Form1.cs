@@ -120,7 +120,9 @@ namespace AlarmSuiteSimulator
         private void timer1_Tick(object sender, EventArgs e)
         {
             Random rand = new Random();
-
+            bool service = false;
+            if(rand.Next(0, 101) <= 5)
+                service = true;
 
             try
             {
@@ -149,41 +151,63 @@ namespace AlarmSuiteSimulator
                     //Gets a random alarm type
                     int alarmType = rand.Next(1, 4);
                     //Sets the amount of alarms to trigger every tick
-                    int triggered = rand.Next(0, 6);
+                    int triggered = rand.Next(0, 3);
                     int i = 0;
+
+                    //Alarm status to be set
+                    int status = 3;
+                    if (service)
+                        status = 2;
                     foreach (KeyValuePair<int, List<int>> kvp in alarms)
                     {
-                        if (kvp.Value[0] == alarmType && kvp.Value[1] != 2 && kvp.Value[2] == floor && kvp.Value[3] == zone && i < triggered)
+                        if (kvp.Value[0] == alarmType && kvp.Value[1] == 1 && kvp.Value[2] == floor && kvp.Value[3] == zone && i < triggered)
                         {
                             //Updates alarm status(es)
                             conn.Open();
                             proc = "USP_Update_Status_Sim";
                             cmd = new MySqlCommand(proc, conn);
+                            cmd.CommandType = CommandType.StoredProcedure;
                             cmd.Parameters.AddWithValue("alarm", kvp.Key);
-                            cmd.Parameters.AddWithValue("aStatus", 3);
+                            cmd.Parameters.AddWithValue("aStatus", status);
                             cmd.ExecuteNonQuery();
                             conn.Dispose();
                             conn.Close();
 
-                            //Creates the message to be created for the triggered alarm
+                            //Creates the message to be created for either a triggered or a service alarm
                             var message = "";
-                            if(alarmType == 1)
-                            {
-                                message = "Security Alarm <span class='triggered'>TRIGGERED</span> at F" + kvp.Value[2] + "-Z" + zones[kvp.Value[3]] + "-R" + kvp.Value[4];
-                            }
-                            else if(alarmType == 2)
-                            {
-                                message = "Carbon Monoxide Alarm <span class='triggered'>TRIGGERED</span> at F" + kvp.Value[2] + "-Z" + zones[kvp.Value[3]] + "-R" + kvp.Value[4];
-                            }
-                            else if(alarmType == 3)
-                            {
-                                message = "Fire Alarm <span class='triggered'>TRIGGERED</span> at F" + kvp.Value[2] + "-Z" + zones[kvp.Value[3]] + "-R" + kvp.Value[4];
-                            }
+                            if(service) {
+                                if (alarmType == 1)
+                                {
+                                    message = "Security Alarm at F" + kvp.Value[2] + "-Z" + zones[kvp.Value[3]] + "-R" + kvp.Value[4] + " reported <span class='service'>SERVICE</span> status; maintenance is advised";
+                                }
+                                else if (alarmType == 2)
+                                {
+                                    message = "Carbon Monoxide Alarm at F" + kvp.Value[2] + "-Z" + zones[kvp.Value[3]] + "-R" + kvp.Value[4] + " reported <span class='service'>SERVICE</span> status; maintenance is advised";
+                                }
+                                else if (alarmType == 3)
+                                {
+                                    message = "Fire Alarm at F" + kvp.Value[2] + "-Z" + zones[kvp.Value[3]] + "-R" + kvp.Value[4] + " reported <span class='service'>SERVICE</span> status; maintenance is advised";
+                                }
+                            } else {
+                                if (alarmType == 1)
+                                {
+                                    message = "Security Alarm at F" + kvp.Value[2] + "-Z" + zones[kvp.Value[3]] + "-R" + kvp.Value[4] + " reported <span class='triggered'>TRIGGERED</span> status";
+                                }
+                                else if (alarmType == 2)
+                                {
+                                    message = "Carbon Monoxide Alarm at F" + kvp.Value[2] + "-Z" + zones[kvp.Value[3]] + "-R" + kvp.Value[4] + " reported <span class='triggered'>TRIGGERED</span> status";
+                                }
+                                else if (alarmType == 3)
+                                {
+                                    message = "Fire Alarm at F" + kvp.Value[2] + "-Z" + zones[kvp.Value[3]] + "-R" + kvp.Value[4] + " reported <span class='triggered'>TRIGGERED</span> status";
+                                }
+                            }                                      
 
                             //Inserts the message
                             conn.Open();
                             proc = "USP_Insert_Message_Sim";
                             cmd = new MySqlCommand(proc, conn);
+                            cmd.CommandType = CommandType.StoredProcedure;
                             cmd.Parameters.AddWithValue("alarm", kvp.Key);
                             cmd.Parameters.AddWithValue("msgDate", DateTime.Now);
                             cmd.Parameters.AddWithValue("msg", message);
